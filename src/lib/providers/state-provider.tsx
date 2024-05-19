@@ -208,9 +208,16 @@ const appReducer = (
                   return {
                     ...folder,
                     files: [...folder.files, action.payload.file].sort(
-                      (a, b) =>
-                        new Date(a.createdAt).getTime() -
-                        new Date(b.createdAt).getTime()
+                      (a, b) => {
+                        // Handle null values for createdAt
+                        const createdAtA = a.createdAt
+                          ? new Date(a.createdAt).getTime()
+                          : 0;
+                        const createdAtB = b.createdAt
+                          ? new Date(b.createdAt).getTime()
+                          : 0;
+                        return createdAtA - createdAtB;
+                      }
                     ),
                   };
                 }
@@ -221,6 +228,7 @@ const appReducer = (
           return workspace;
         }),
       };
+
     case "DELETE_FILE":
       return {
         ...state,

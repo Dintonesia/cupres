@@ -282,8 +282,17 @@ export const createFolder = async (folder: Folder) => {
 
 export const createFile = async (file: File) => {
   try {
-    await db.insert(files).values(file);
-    return { data: null, error: null };
+    if (file.workspaceId !== null && file.folderId !== null) {
+      await db.insert(files).values({
+        title: file.title || "",
+        iconId: file.iconId || "",
+        workspaceId: file.workspaceId,
+        folderId: file.folderId,
+      });
+      return { data: null, error: null };
+    } else {
+      throw new Error("WorkspaceId and FolderId cannot be null");
+    }
   } catch (error) {
     console.log(error);
     return { data: null, error: "Error" };
@@ -305,9 +314,13 @@ export const updateFolder = async (
 
 export const updateFile = async (file: Partial<File>, fileId: string) => {
   try {
+    const filteredFile = Object.fromEntries(
+      Object.entries(file).filter(([_, value]) => value !== null)
+    );
+
     const response = await db
       .update(files)
-      .set(file)
+      .set(filteredFile)
       .where(eq(files.id, fileId));
     return { data: null, error: null };
   } catch (error) {

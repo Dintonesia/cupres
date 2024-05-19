@@ -35,6 +35,7 @@ const CollaboratorSearch: React.FC<CollaboratorSearchProps> = ({
 
   useEffect(() => {
     return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);

@@ -114,7 +114,19 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       inTrash: dirDetails.inTrash,
       bannerUrl: dirDetails.bannerUrl,
     } as workspace | Folder | File;
-  }, [state, workspaceId, folderId]);
+  }, [
+    dirType,
+    dirDetails.title,
+    dirDetails.iconId,
+    dirDetails.createdAt,
+    dirDetails.data,
+    dirDetails.inTrash,
+    dirDetails.bannerUrl,
+    state.workspaces,
+    workspaceId,
+    folderId,
+    fileId,
+  ]);
 
   const breadCrumbs = useMemo(() => {
     if (!pathname || !state.workspaces || !workspaceId) return;
@@ -155,25 +167,32 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
   }, [state, pathname, workspaceId]);
 
   //
-  const wrapperRef = useCallback(async (wrapper: any) => {
-    if (typeof window !== "undefined") {
-      if (wrapper === null) return;
+  const wrapperRef = useCallback((wrapper: HTMLDivElement | null) => {
+    if (wrapper !== null && typeof window !== "undefined") {
       wrapper.innerHTML = "";
       const editor = document.createElement("div");
       wrapper.append(editor);
-      const Quill = (await import("quill")).default;
-      const QuillCursors = (await import("quill-cursors")).default;
-      Quill.register("modules/cursors", QuillCursors);
-      const q = new Quill(editor, {
-        theme: "snow",
-        modules: {
-          toolbar: TOOLBAR_OPTIONS,
-          cursors: {
-            transformOnTextChange: true,
-          },
-        },
-      });
-      setQuill(q);
+      import("quill")
+        .then((QuillModule) => {
+          const Quill = QuillModule.default;
+          import("quill-cursors").then((QuillCursorsModule) => {
+            const QuillCursors = QuillCursorsModule.default;
+            Quill.register("modules/cursors", QuillCursors);
+            const q = new Quill(editor, {
+              theme: "snow",
+              modules: {
+                toolbar: TOOLBAR_OPTIONS,
+                cursors: {
+                  transformOnTextChange: true,
+                },
+              },
+            });
+            setQuill(q);
+          });
+        })
+        .catch((error) => {
+          console.error("Error loading Quill:", error);
+        });
     }
   }, []);
 
@@ -306,7 +325,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
           payload: {
             file: { data: selectedDir[0].data },
             fileId,
-            folderId: selectedDir[0].folderId,
+            folderId: selectedDir?.[0]?.folderId || "",
             workspaceId,
           },
         });
@@ -350,7 +369,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       }
     };
     fetchInformation();
-  }, [fileId, workspaceId, quill, dirType]);
+  }, [fileId, workspaceId, quill, dirType, dispatch, router]);
 
   useEffect(() => {
     if (quill === null || socket === null || !fileId || !localCursors.length)
